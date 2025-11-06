@@ -9,8 +9,6 @@ git clone https://github.com/zh0rchik/diplom.git
 ```python
 pip install -r requirements.txt
 ```
-
-<hr>
 ### Добавление новых зависимостей в проект
 
 ```python
