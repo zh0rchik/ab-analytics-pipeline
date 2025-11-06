@@ -1,14 +1,15 @@
-Клонирование
-```python
+##  Установка и запуск проекта
+
+### Клонирование репозитория
 git clone https://github.com/zh0rchik/diplom.git
 ```
-Зависимости проекта
+### Зависимости проекта
 ```python
 pip install -r requirements.txt
 ```
 
 <hr>
-Чтобы не забыть как добавить новые либы
+### Добавление новых зависимостей в проект
 
 ```python
 pip freeze > requirements.txt
