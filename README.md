@@ -2,7 +2,7 @@
 
 ### Клонирование репозитория
 ```python
-git clone [git@github.com:zh0rchik/ab-analytics-pipeline.git](https://github.com/zh0rchik/ab-analytics-pipeline.git)
+git clone https://github.com/zh0rchik/ab-analytics-pipeline.git
 ```
 ### Зависимости проекта
 
