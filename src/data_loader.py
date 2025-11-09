@@ -95,7 +95,7 @@ class DataLoader:
         }
         return info
 
-# Функция для быстрой загрузки (как у вас)
+# Функция для быстрой загрузки
 def load_raw(path: str) -> pd.DataFrame:
     """Быстрая загрузка сырых данных"""
     return pd.read_csv(path)
