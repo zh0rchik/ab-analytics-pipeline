@@ -12,22 +12,38 @@ logger = logging.getLogger(__name__)
 
 
 class StatisticalAnalyzer:
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame): 
         self.df = df
         self.results = {}
 
-    def validate_srm(self, expected_ratio: float = 0.5) -> Dict:
+    def validate_srm(self, expected_ratios: Dict[str, float] = None) -> Dict:
         """
         Проверка Sample Ratio Mismatch (SRM)
-        expected_ratio: ожидаемое соотношение (0.5 для 50/50)
+
+        expected_ratios: словарь с ожидаемыми пропорциями для каждой группы,
+                        например {'ad': 0.6, 'psa': 0.4}.
+                        Сумма должна быть ровно 1.0.
+                        По умолчанию 0.5 для каждой группы.
         """
         group_counts = self.df['test_group'].value_counts()
         total = group_counts.sum()
 
+        # Если словарь не задан, используем 0.5 для всех групп
+        if expected_ratios is None:
+            expected_ratios = {group: 0.5 for group in group_counts.index}
+
+        # Проверка и установка дефолтных значений для отсутствующих групп
+        for group in group_counts.index:
+            if group not in expected_ratios:
+                expected_ratios[group] = 0.5
+
+        # Проверка, что сумма пропорций = 1
+        total_ratio = sum(expected_ratios.values())
+        if not np.isclose(total_ratio, 1.0, atol=1e-6):
+            raise ValueError(f"Сумма expected_ratios = {total_ratio:.6f}, должна быть ровно 1.0")
+
         # Ожидаемые counts
-        expected_counts = {
-            group: total * expected_ratio for group in group_counts.index
-        }
+        expected_counts = {group: total * expected_ratios[group] for group in group_counts.index}
 
         # Chi-square test
         chi2, p_value = stats.chisquare(
@@ -48,6 +64,8 @@ class StatisticalAnalyzer:
         logger.info(f"P-value: {p_value:.6f}")
 
         return srm_result
+
+
 
     def calculate_conversion_rates(self) -> Dict:
         """Расчет конверсии по группам"""
