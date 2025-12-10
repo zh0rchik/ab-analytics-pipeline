@@ -65,8 +65,6 @@ class StatisticalAnalyzer:
 
         return srm_result
 
-
-
     def calculate_conversion_rates(self) -> Dict:
         """Расчет конверсии по группам"""
         conversion_rates = {}
@@ -134,6 +132,68 @@ class StatisticalAnalyzer:
 
         self.results['proportion_test'] = result
         return result
+
+    def validate_srm_monte_carlo(self, expected_ratios=None, simulations=10000):
+        """
+        Проверка Sample Ratio Mismatch (SRM) методом Монте-Карло.
+        Подходит для любых пропорций и любого количества групп.
+        """
+        print("🔍 SRM ПРОВЕРКА (метод 4 — Monte-Carlo Simulation)")
+
+        # Реальные данные
+        group_counts = self.df['test_group'].value_counts().to_dict()
+        groups = list(group_counts.keys())
+        total = sum(group_counts.values())
+
+        # Ожидаемые пропорции
+        if expected_ratios is None:
+            expected_ratios = {g: 1 / len(groups) for g in groups}
+
+        # Проверяем сумму пропорций
+        if not np.isclose(sum(expected_ratios.values()), 1.0):
+            raise ValueError("Сумма expected_ratios должна быть 1.0")
+
+        # Ожидаемые counts
+        expected_counts = {g: total * expected_ratios[g] for g in groups}
+
+        # Встроенная функция для генерирования одной симуляции
+        def simulate_once():
+            simulated = np.random.multinomial(total, [expected_ratios[g] for g in groups])
+            return simulated
+
+        # Фактический вектор
+        observed = np.array([group_counts[g] for g in groups])
+
+        # Количество расхождений
+        diffs = []
+        for _ in range(simulations):
+            sim = simulate_once()
+            diff = np.sum((sim - observed) ** 2 / expected_counts[g] for sim, g in zip(sim, groups))
+            diffs.append(diff)
+
+        diffs = np.array(diffs)
+
+        # Наше наблюдение
+        observed_diff = np.sum((observed - np.array(list(expected_counts.values()))) ** 2
+                            / np.array(list(expected_counts.values())))
+
+        # P-value
+        p_value = np.mean(diffs >= observed_diff)
+
+        message = (
+            "⚠️ SRM обнаружен — распределение маловероятно при честной рандомизации."
+            if p_value < 0.05
+            else "✅ SRM не обнаружен — распределение в пределах нормы."
+        )
+
+        return {
+            "message": message,
+            "p_value": float(p_value),
+            "observed_counts": group_counts,
+            "expected_counts": expected_counts,
+            "simulations": simulations,
+            "observed_stat": float(observed_diff),
+        }
 
     def bootstrap_analysis(self, n_bootstrap: int = 10000) -> Dict:
         """Bootstrap анализ для разницы конверсий"""
